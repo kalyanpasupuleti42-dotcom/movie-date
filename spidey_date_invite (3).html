@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A Web-Slinging Invitation</title>
+<style>
+  :root{
+    --spidey-red: #c8102e;
+    --spidey-blue: #0a2a6e;
+    --web-white: #f4f1e8;
+    --ink: #16193b;
+    --gold: #e8b64b;
+  }
+
+  *{ box-sizing:border-box; }
+
+  html,body{
+    margin:0; padding:0; min-height:100vh;
+    background: radial-gradient(circle at 20% 10%, #1a3a8a 0%, var(--spidey-blue) 45%, var(--ink) 100%);
+    font-family: 'Georgia', 'Times New Roman', serif;
+    color: var(--web-white);
+    overflow-x:hidden;
+  }
+
+  /* web line texture */
+  .web-bg{
+    position:fixed; inset:0; z-index:0; pointer-events:none; opacity:0.14;
+    background-image:
+      repeating-linear-gradient(0deg, transparent 0 78px, rgba(244,241,232,.5) 78px 79px),
+      repeating-linear-gradient(90deg, transparent 0 78px, rgba(244,241,232,.5) 78px 79px);
+  }
+
+  .stage{
+    position:relative; z-index:1;
+    min-height:100vh;
+    display:flex; align-items:center; justify-content:center;
+    padding:24px;
+  }
+
+  .card{
+    width:100%; max-width:560px;
+    background: linear-gradient(180deg, rgba(200,16,46,0.96), rgba(150,10,34,0.96));
+    border-radius:18px;
+    padding:44px 34px 38px;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.5), 0 0 0 6px var(--web-white), 0 0 0 10px var(--ink);
+    text-align:center;
+    position:relative;
+    animation: dropIn .7s cubic-bezier(.2,.9,.25,1);
+  }
+
+  @keyframes dropIn{
+    0%{ transform: translateY(-140px) rotate(-3deg); opacity:0; }
+    70%{ transform: translateY(8px) rotate(1deg); opacity:1; }
+    100%{ transform: translateY(0) rotate(0deg); }
+  }
+
+  .eyebrow{
+    font-family: 'Trebuchet MS', sans-serif;
+    letter-spacing:5px;
+    font-size:12px;
+    text-transform:uppercase;
+    color: var(--gold);
+    margin-bottom:14px;
+  }
+
+  h1{
+    font-family: 'Impact','Arial Black', sans-serif;
+    font-size:clamp(28px, 6vw, 42px);
+    line-height:1.15;
+    margin:0 0 10px;
+    text-shadow: 3px 3px 0 var(--ink), -1px -1px 0 var(--web-white);
+    letter-spacing:1px;
+  }
+
+  .sub{
+    font-size:16px;
+    color: var(--web-white);
+    opacity:.92;
+    margin-bottom:30px;
+  }
+
+  .quote-line{
+    font-family:'Trebuchet MS', sans-serif;
+    font-style: italic;
+    font-size: 14.5px;
+    color: var(--gold);
+    opacity: .95;
+    margin: 0 0 14px;
+    line-height: 1.5;
+  }
+
+  .date-chip{
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .date-chip input[type="date"]{
+    background: transparent;
+    border: none;
+    color: var(--web-white);
+    font-family: 'Trebuchet MS', sans-serif;
+    font-size: 13px;
+    letter-spacing: .5px;
+    outline: none;
+    cursor: pointer;
+  }
+  .date-chip input[type="date"]::-webkit-calendar-picker-indicator{
+    filter: invert(1);
+    cursor: pointer;
+  }
+
+  /* ---------- No-click popup ---------- */
+  .modal-overlay{
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: rgba(10,12,30,0.72);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .modal-overlay.hidden{ display: none; }
+
+  .modal-box{
+    width: 100%;
+    max-width: 420px;
+    background: linear-gradient(180deg, rgba(200,16,46,0.98), rgba(150,10,34,0.98));
+    border-radius: 16px;
+    padding: 28px 26px 24px;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 0 5px var(--web-white), 0 0 0 8px var(--ink);
+    animation: dropIn .4s cubic-bezier(.2,.9,.25,1);
+  }
+
+  .modal-text{
+    font-family: 'Trebuchet MS', sans-serif;
+    font-size: 15.5px;
+    line-height: 1.6;
+    color: var(--web-white);
+    margin-bottom: 20px;
+  }
+
+  #noModalClose{
+    background: var(--gold);
+    color: var(--ink);
+    box-shadow: 0 6px 0 #a97c1c, 0 10px 18px rgba(0,0,0,.35);
+    width: 100%;
+  }
+  #noModalClose:hover{ transform: translateY(-2px) scale(1.02); }
+
+  .details{
+    display:inline-flex; gap:10px; flex-wrap:wrap; justify-content:center;
+    margin-bottom:32px;
+  }
+  .chip{
+    font-family:'Trebuchet MS', sans-serif;
+    background: var(--ink);
+    border:2px solid var(--gold);
+    color: var(--web-white);
+    padding:7px 14px;
+    border-radius:999px;
+    font-size:13px;
+    letter-spacing:.5px;
+  }
+
+  .btn-row{
+    position:relative;
+    display:flex; gap:18px; justify-content:center; align-items:center;
+    min-height:70px;
+  }
+
+  button{
+    font-family:'Trebuchet MS', sans-serif;
+    font-weight:700;
+    font-size:17px;
+    padding:14px 30px;
+    border-radius:10px;
+    border:none;
+    cursor:pointer;
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+
+  #yesBtn{
+    background: var(--gold);
+    color: var(--ink);
+    box-shadow: 0 6px 0 #a97c1c, 0 10px 18px rgba(0,0,0,.35);
+  }
+  #yesBtn:hover{ transform: translateY(-2px) scale(1.04); }
+  #yesBtn:active{ transform: translateY(3px); box-shadow: 0 2px 0 #a97c1c; }
+
+  #noBtn{
+    background: var(--web-white);
+    color: var(--ink);
+  }
+
+  #noBtn:disabled{
+    opacity:.35;
+    cursor: not-allowed;
+    box-shadow:none;
+  }
+  #noBtn:disabled:hover{ transform:none; }
+
+  .hint{
+    margin-top:18px;
+    font-size:12.5px;
+    color: var(--web-white);
+    opacity:.65;
+    font-family:'Trebuchet MS', sans-serif;
+    transition: opacity .15s ease;
+  }
+
+  #noMessage.taunt{
+    opacity:1;
+    font-weight:700;
+    color: var(--gold);
+    font-size:13.5px;
+  }
+
+  /* ---------- Screen 2: Food ---------- */
+  .hidden{ display:none; }
+
+  .food-list{
+    display:flex; flex-direction:column; gap:10px;
+    margin-bottom:22px;
+    text-align:left;
+  }
+
+  .food-item{
+    display:flex; align-items:center; justify-content:space-between;
+    background: rgba(22,25,59,0.55);
+    border:2px solid transparent;
+    border-radius:10px;
+    padding:12px 16px;
+    font-family:'Trebuchet MS', sans-serif;
+    cursor:pointer;
+    transition: border-color .15s ease, background .15s ease;
+  }
+  .food-item:hover{ border-color: var(--gold); }
+  .food-item.selected{
+    border-color: var(--gold);
+    background: rgba(232,182,75,0.18);
+  }
+
+  .food-item .fname{ display:flex; align-items:center; gap:10px; font-size:15px; }
+  .food-item .fprice{ font-weight:700; color: var(--gold); font-size:15px; }
+
+  .checkbox{
+    width:18px; height:18px; border-radius:5px;
+    border:2px solid var(--gold);
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:12px; color: var(--ink); flex-shrink:0;
+  }
+  .food-item.selected .checkbox{ background: var(--gold); }
+
+  .bill-box{
+    display:flex; justify-content:space-between; align-items:center;
+    background: var(--ink);
+    border:2px dashed var(--gold);
+    border-radius:10px;
+    padding:14px 18px;
+    margin-bottom:24px;
+    font-family:'Trebuchet MS', sans-serif;
+  }
+  .bill-box .label{ font-size:13px; letter-spacing:1px; text-transform:uppercase; opacity:.8;}
+  .bill-box .amount{ font-size:22px; font-weight:800; color: var(--gold); }
+
+  #confirmBtn{
+    width:100%;
+    background: var(--gold); color: var(--ink);
+    box-shadow: 0 6px 0 #a97c1c, 0 10px 18px rgba(0,0,0,.35);
+  }
+  #confirmBtn:disabled{
+    opacity:.45; cursor:not-allowed; box-shadow:none;
+  }
+  #confirmBtn:not(:disabled):hover{ transform: translateY(-2px) scale(1.02); }
+
+  /* ---------- Screen 3: Confirmation ---------- */
+  .roses{ font-size:44px; margin-bottom:10px; letter-spacing:6px; }
+
+  .final-title{
+    font-family:'Impact','Arial Black', sans-serif;
+    font-size:clamp(26px,6vw,36px);
+    margin:0 0 12px;
+    text-shadow: 3px 3px 0 var(--ink);
+  }
+
+  .summary{
+    text-align:left;
+    background: rgba(22,25,59,0.55);
+    border-radius:10px;
+    padding:16px 20px;
+    margin:20px 0;
+    font-family:'Trebuchet MS', sans-serif;
+    font-size:14.5px;
+    line-height:1.9;
+  }
+  .summary b{ color: var(--gold); }
+
+  /* ---------- Screen 4: Silly "fee" slide ---------- */
+  .fee-box{
+    text-align:left;
+    background: rgba(22,25,59,0.55);
+    border:2px dashed var(--gold);
+    border-radius:10px;
+    padding:16px 20px;
+    margin:20px 0 14px;
+    font-family:'Trebuchet MS', sans-serif;
+    font-size:14.5px;
+    line-height:1.8;
+  }
+  .fee-box .fee-line{ display:flex; justify-content:space-between; align-items:center; }
+  .fee-box .fee-label{ opacity:.9; }
+  .fee-box .fee-amount{ font-weight:800; color: var(--gold); }
+  .fee-note{
+    font-family:'Trebuchet MS', sans-serif;
+    font-style:italic;
+    font-size:13px;
+    color: var(--gold);
+    opacity:.95;
+    margin-bottom:22px;
+  }
+  #hugPayBtn{
+    width:100%;
+    background: var(--gold); color: var(--ink);
+    box-shadow: 0 6px 0 #a97c1c, 0 10px 18px rgba(0,0,0,.35);
+  }
+  #hugPayBtn:hover{ transform: translateY(-2px) scale(1.02); }
+  #hugPayBtn:active{ transform: translateY(3px); box-shadow: 0 2px 0 #a97c1c; }
+  #hugReceipt{
+    margin-top:16px;
+    font-family:'Trebuchet MS', sans-serif;
+    font-size:14.5px;
+    color: var(--web-white);
+    opacity:0;
+    transform: translateY(6px);
+    transition: opacity .4s ease, transform .4s ease;
+  }
+  #hugReceipt.show{ opacity:1; transform:translateY(0); }
+  #continueBtn{
+    width:100%;
+    margin-top:22px;
+    background: var(--web-white);
+    color: var(--ink);
+  }
+  #continueBtn:hover{ transform: translateY(-2px) scale(1.02); }
+
+  /* ---------- Rating & feedback section ---------- */
+  .feedback-section{
+    margin-top:26px;
+    padding-top:22px;
+    border-top:2px dashed rgba(244,241,232,0.35);
+    text-align:left;
+  }
+  .feedback-label{
+    font-family:'Trebuchet MS', sans-serif;
+    font-size:14px;
+    color: var(--web-white);
+    margin-bottom:10px;
+    text-align:center;
+  }
+  .star-row{
+    display:flex;
+    justify-content:center;
+    gap:6px;
+    margin-bottom:16px;
+  }
+  .star{
+    font-size:30px;
+    cursor:pointer;
+    filter: grayscale(1) opacity(.5);
+    transition: transform .12s ease, filter .12s ease;
+  }
+  .star:hover{ transform: scale(1.15); }
+  .star.active{ filter: grayscale(0) opacity(1); }
+
+  #feedbackText{
+    width:100%;
+    min-height:80px;
+    resize:vertical;
+    font-family:'Trebuchet MS', sans-serif;
+    font-size:14px;
+    color: var(--ink);
+    background: var(--web-white);
+    border:2px solid var(--gold);
+    border-radius:10px;
+    padding:12px 14px;
+    margin-bottom:16px;
+    outline:none;
+  }
+
+  #feedbackSubmitBtn{
+    width:100%;
+    background: var(--gold); color: var(--ink);
+    box-shadow: 0 6px 0 #a97c1c, 0 10px 18px rgba(0,0,0,.35);
+  }
+  #feedbackSubmitBtn:hover{ transform: translateY(-2px) scale(1.02); }
+  #feedbackSubmitBtn:active{ transform: translateY(3px); box-shadow: 0 2px 0 #a97c1c; }
+  #feedbackSubmitBtn:disabled{ opacity:.5; cursor:not-allowed; box-shadow:none; }
+
+  #feedbackReceipt{
+    margin-top:14px;
+    text-align:center;
+    font-family:'Trebuchet MS', sans-serif;
+    font-size:14px;
+    color: var(--web-white);
+    opacity:0;
+    transform: translateY(6px);
+    transition: opacity .4s ease, transform .4s ease;
+  }
+  #feedbackReceipt.show{ opacity:1; transform:translateY(0); }
+
+  @media (prefers-reduced-motion: reduce){
+    .card{ animation:none; }
+    button{ transition:none; }
+    .spidey-drop, .web-thread, .spidey-emoji{ animation:none !important; }
+  }
+
+  /* ---------- Falling spider ---------- */
+  .spidey-drop{
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    pointer-events: none;
+  }
+  .web-thread{
+    width: 2px;
+    height: 0;
+    background: linear-gradient(var(--web-white), rgba(244,241,232,.35));
+    animation: threadGrow 1.8s ease-out forwards;
+  }
+  .spidey-emoji{
+    font-size: 34px;
+    margin-top: -2px;
+    transform-origin: top center;
+    filter: drop-shadow(0 6px 8px rgba(0,0,0,.45));
+    animation: spideyBounce 1.8s ease-out forwards, spideySway 3.2s ease-in-out 1.8s infinite;
+  }
+
+  @keyframes threadGrow{
+    from{ height: 0; }
+    to{ height: 120px; }
+  }
+  @keyframes spideyBounce{
+    0%{ transform: translateY(-24px) rotate(-10deg); opacity:0; }
+    15%{ opacity:1; }
+    55%{ transform: translateY(8px) rotate(6deg); }
+    75%{ transform: translateY(-4px) rotate(-4deg); }
+    100%{ transform: translateY(0) rotate(0deg); }
+  }
+  @keyframes spideySway{
+    0%, 100%{ transform: rotate(-7deg); }
+    50%{ transform: rotate(7deg); }
+  }
+</style>
+</head>
+<body>
+
+<div class="web-bg"></div>
+
+<div class="spidey-drop" aria-hidden="true">
+  <div class="web-thread"></div>
+  <div class="spidey-emoji">🕷️</div>
+</div>
+
+<div class="stage" id="stage">
+
+  <!-- NO-CLICK POPUP -->
+  <div class="modal-overlay hidden" id="noModal">
+    <div class="modal-box">
+      <div class="modal-text" id="noModalText"></div>
+      <button id="noModalClose">OK</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 1 -->
+  <div class="card" id="screen1">
+    <div class="eyebrow">A Special Delivery, Web-Slung To You</div>
+    <div class="quote-line">Hi Bhargavi (with all due respect, my idiot girl) 😄</div>
+    <h1>Will you come to a<br>movie date with me?</h1>
+    <div class="sub">Spider-Man 🕷️🍿 &nbsp;•&nbsp; pick a date &amp; time below</div>
+
+    <div class="details">
+      <label class="chip date-chip" for="dateInput">
+        📅 <input type="date" id="dateInput">
+      </label>
+      <label class="chip date-chip" for="timeInput">
+        ⏰ <input type="time" id="timeInput">
+      </label>
+      <span class="chip">🎬 Spider-Man</span>
+      <span class="chip">🍿 My Treat</span>
+      <span class="chip">🎟️ Best Seats, Already Scouted</span>
+    </div>
+
+    <div class="btn-row">
+      <button id="yesBtn">Yes, I'm in! 🎬</button>
+      <button id="noBtn">No</button>
+    </div>
+    <div class="hint" id="noMessage">Choose wisely, 125 👀</div>
+  </div>
+
+  <!-- SCREEN 2 -->
+  <div class="card hidden" id="screen2">
+    <div class="eyebrow">She said yes 🎉</div>
+    <h1 style="font-size:28px;">Now, pick your snacks</h1>
+    <div class="sub">Choose whatever you like — it's on me. Early show, so no crowds and no rush.</div>
+
+    <div class="food-list" id="foodList">
+      <div class="food-item" data-price="220" data-name="Large Popcorn 🍿">
+        <span class="fname"><span class="checkbox"></span>Large Popcorn 🍿</span>
+        <span class="fprice">₹220</span>
+      </div>
+      <div class="food-item" data-price="150" data-name="Nachos & Cheese 🧀">
+        <span class="fname"><span class="checkbox"></span>Nachos &amp; Cheese 🧀</span>
+        <span class="fprice">₹150</span>
+      </div>
+      <div class="food-item" data-price="90" data-name="Coke 🥤">
+        <span class="fname"><span class="checkbox"></span>Coke 🥤</span>
+        <span class="fprice">₹90</span>
+      </div>
+      <div class="food-item" data-price="180" data-name="Choco Lava Cake 🍫">
+        <span class="fname"><span class="checkbox"></span>Choco Lava Cake 🍫</span>
+        <span class="fprice">₹180</span>
+      </div>
+      <div class="food-item" data-price="130" data-name="Hot Dog 🌭">
+        <span class="fname"><span class="checkbox"></span>Hot Dog 🌭</span>
+        <span class="fprice">₹130</span>
+      </div>
+    </div>
+
+    <div class="bill-box">
+      <span class="label">Total Bill</span>
+      <span class="amount">₹<span id="billAmount">0</span></span>
+    </div>
+
+    <button id="confirmBtn" disabled>Confirm & Lock It In 🎬</button>
+  </div>
+
+  <!-- SCREEN 3 -->
+  <div class="card hidden" id="screen3">
+    <div class="roses">🎟️🍿🎬</div>
+    <div class="final-title">It's a date!</div>
+    <div class="sub">Mark your calendar — this one's going to be fun</div>
+
+    <div class="summary">
+      🎬 <b>Movie:</b> Spider-Man<br>
+      📅 <b>When:</b> <span id="summaryWhen">2nd Sunday</span><br>
+      🍿 <b>Snacks:</b> <span id="summaryFood">—</span><br>
+      💰 <b>Bill:</b> ₹<span id="summaryBill">0</span> (my treat)
+    </div>
+
+    <div class="sub" style="margin-top:10px;">Funny how the days feel longer when I haven't run into you in a while. Glad Sunday's finally here. 🕷️</div>
+
+    <button id="continueBtn">One last (silly) formality →</button>
+  </div>
+
+  <!-- SCREEN 4: joke "fee" slide -->
+  <div class="card hidden" id="screen4">
+    <div class="eyebrow">Terms &amp; Conditions*</div>
+    <h1 style="font-size:26px;">Please Confirm Your Acceptance</h1>
+    <div class="sub">*not actual terms, not an actual fee, please don't worry</div>
+
+    <div class="fee-box">
+      <div class="fee-line">
+        <span class="fee-label">📝 Date Agreement Fee</span>
+        <span class="fee-amount">1 Hug 🤗</span>
+      </div>
+      <div class="fee-line" style="margin-top:8px;">
+        <span class="fee-label">🔁 Refund Policy</span>
+        <span class="fee-amount">More Hugs Only</span>
+      </div>
+    </div>
+
+    <div class="fee-note">Fee is fully negotiable for a small hug 🙈</div>
+
+    <button id="hugPayBtn">Pay Now (with a hug) 🙈</button>
+    <div class="hint" id="hugReceipt">Payment received. Receipt sent to nowhere. Date officially locked in. 🎉</div>
+
+    <div class="feedback-section">
+      <div class="feedback-label">Kindly do a rating and mention your feedback ⭐</div>
+      <div class="star-row" id="starRow">
+        <span class="star" data-value="1">★</span>
+        <span class="star" data-value="2">★</span>
+        <span class="star" data-value="3">★</span>
+        <span class="star" data-value="4">★</span>
+        <span class="star" data-value="5">★</span>
+      </div>
+      <textarea id="feedbackText" placeholder="Any thoughts, jokes, or complaints about this invite? 😄"></textarea>
+      <button id="feedbackSubmitBtn">Send Feedback & Confirm 💌</button>
+      <div class="hint" id="feedbackReceipt">Got it — thank you! Confirmation email is on its way. 💌</div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+  // ================== CONFIG ==================
+  // Paste your Discord webhook URL here. To get one:
+  // Discord app -> your server -> a channel's settings (gear icon) ->
+  // Integrations -> Webhooks -> New Webhook -> Copy Webhook URL.
+  const DISCORD_WEBHOOK_URL = "PASTE_YOUR_DISCORD_WEBHOOK_URL_HERE";
+
+  // EmailJS config — sign up free at https://www.emailjs.com/
+  // 1. Add an Email Service (e.g. connect your Gmail) -> copy its Service ID.
+  // 2. Create an Email Template with variables: {{when}}, {{food}}, {{bill}},
+  //    {{rating}}, {{feedback}} -> copy its Template ID.
+  // 3. Account > General -> copy your Public Key.
+  const EMAILJS_PUBLIC_KEY  = "8bb7mmEB1K3DwVW9r";
+  const EMAILJS_SERVICE_ID  = "service_kkbh93n";
+  const EMAILJS_TEMPLATE_ID = "template_u4l1vvb";
+
+  emailjs.init(EMAILJS_PUBLIC_KEY);
+  // ==============================================
+
+  const stage = document.getElementById('stage');
+  const noBtn = document.getElementById('noBtn');
+  const yesBtn = document.getElementById('yesBtn');
+  const noMessage = document.getElementById('noMessage');
+  const screen1 = document.getElementById('screen1');
+  const screen2 = document.getElementById('screen2');
+  const screen3 = document.getElementById('screen3');
+  const confirmBtn = document.getElementById('confirmBtn');
+  const billAmountEl = document.getElementById('billAmount');
+  const foodList = document.getElementById('foodList');
+  const dateInput = document.getElementById('dateInput');
+  const timeInput = document.getElementById('timeInput');
+
+  function getSelectedDateText(){
+    let text = "2nd Sunday";
+    if(dateInput.value){
+      const d = new Date(dateInput.value + "T00:00:00");
+      text = d.toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long' });
+    }
+    if(timeInput.value){
+      const [h, m] = timeInput.value.split(':').map(Number);
+      const period = h >= 12 ? 'PM' : 'AM';
+      const hour12 = ((h % 12) || 12);
+      text += `, ${hour12}:${String(m).padStart(2,'0')} ${period}`;
+    }
+    return text;
+  }
+
+  dateInput.min = new Date().toISOString().split('T')[0];
+
+  // ----- Pre-fill a default date/time so a real value is always available -----
+  // (Editable by her — this just avoids showing a placeholder if she doesn't touch the pickers.)
+  (function setDefaultDateTime(){
+    const now = new Date();
+    const dayOfWeek = now.getDay(); // 0 = Sunday
+    let daysUntilSunday = (7 - dayOfWeek) % 7;
+    if(daysUntilSunday === 0) daysUntilSunday = 7; // push to the NEXT Sunday, not today
+    const nextSunday = new Date(now);
+    nextSunday.setDate(now.getDate() + daysUntilSunday);
+
+    if(!dateInput.value){
+      dateInput.value = nextSunday.toISOString().split('T')[0];
+    }
+    if(!timeInput.value){
+      timeInput.value = "19:00";
+    }
+  })();
+
+  // ----- "No" button: clickable, but escalates with each click via popup -----
+  const noModal = document.getElementById('noModal');
+  const noModalText = document.getElementById('noModalText');
+  const noModalClose = document.getElementById('noModalClose');
+
+  const noSequence = [
+    "Oops, looks like you picked the wrong one by mistake 🙈 I hope you've got both brains and beauty — please choose again.",
+    "Beauty with brains always chooses No, huh? 😏 Try again.",
+    "You may face the consequences of selecting No 😈 I'll tell your mom everything.",
+    "Pleaseeeeeeeeeeeeeeeee choose Yes 🥺🙏"
+  ];
+  let noClickCount = 0;
+
+  noBtn.addEventListener('click', ()=>{
+    if(noBtn.disabled) return;
+
+    noModalText.textContent = noSequence[noClickCount];
+    noModal.classList.remove('hidden');
+    noClickCount++;
+
+    if(noClickCount >= noSequence.length){
+      noBtn.disabled = true;
+    }
+  });
+
+  noModalClose.addEventListener('click', ()=>{
+    noModal.classList.add('hidden');
+  });
+
+  // ----- Yes -> silently notify via Discord webhook, then go to snacks -----
+  yesBtn.addEventListener('click', ()=>{
+    fetch(DISCORD_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        content: `🎉🕷️ **SHE SAID YES!**\nWhen: ${getSelectedDateText()}\n\nGo get ready. 🎬`
+      })
+    })
+    .then(res => {
+      if(!res.ok){ console.error('Discord webhook responded with status', res.status); }
+      else { console.log('Discord notification sent OK'); }
+    })
+    .catch(err => {
+      console.error('Discord webhook fetch failed:', err);
+    });
+
+    screen1.classList.add('hidden');
+    screen2.classList.remove('hidden');
+  });
+
+  // ----- Food selection -----
+  let total = 0;
+  const selectedItems = [];
+
+  foodList.addEventListener('click', (e)=>{
+    const item = e.target.closest('.food-item');
+    if(!item) return;
+    const price = parseInt(item.dataset.price, 10);
+    const name = item.dataset.name;
+
+    item.classList.toggle('selected');
+
+    if(item.classList.contains('selected')){
+      total += price;
+      selectedItems.push(name);
+    } else {
+      total -= price;
+      const idx = selectedItems.indexOf(name);
+      if(idx > -1) selectedItems.splice(idx,1);
+    }
+
+    billAmountEl.textContent = total;
+    confirmBtn.disabled = selectedItems.length === 0;
+  });
+
+  // ----- Confirm -> Screen 3 -----
+  confirmBtn.addEventListener('click', ()=>{
+    document.getElementById('summaryWhen').textContent = getSelectedDateText();
+    document.getElementById('summaryFood').textContent = selectedItems.join(', ');
+    document.getElementById('summaryBill').textContent = total;
+    screen2.classList.add('hidden');
+    screen3.classList.remove('hidden');
+  });
+
+  // ----- Screen 3 -> Screen 4 (joke slide) -----
+  const continueBtn = document.getElementById('continueBtn');
+  const screen4 = document.getElementById('screen4');
+  continueBtn.addEventListener('click', ()=>{
+    screen3.classList.add('hidden');
+    screen4.classList.remove('hidden');
+  });
+
+  // ----- Screen 4: hug "payment" (purely for laughs, no real transaction) -----
+  const hugPayBtn = document.getElementById('hugPayBtn');
+  const hugReceipt = document.getElementById('hugReceipt');
+  // ----- Screen 4: star rating -----
+  const starRow = document.getElementById('starRow');
+  const stars = starRow.querySelectorAll('.star');
+  let selectedRating = 0;
+
+  starRow.addEventListener('click', (e)=>{
+    const star = e.target.closest('.star');
+    if(!star) return;
+    selectedRating = parseInt(star.dataset.value, 10);
+    stars.forEach(s => {
+      s.classList.toggle('active', parseInt(s.dataset.value, 10) <= selectedRating);
+    });
+  });
+
+  // ----- Screen 4: feedback submit -> sends real confirmation email via EmailJS -----
+  const feedbackText = document.getElementById('feedbackText');
+  const feedbackSubmitBtn = document.getElementById('feedbackSubmitBtn');
+  const feedbackReceipt = document.getElementById('feedbackReceipt');
+
+  feedbackSubmitBtn.addEventListener('click', ()=>{
+    const templateParams = {
+      when: getSelectedDateText(),
+      food: selectedItems.length ? selectedItems.join(', ') : '—',
+      bill: total,
+      rating: selectedRating ? `${selectedRating} / 5 ⭐` : 'Not rated',
+      feedback: feedbackText.value.trim() || '(no comment left)'
+    };
+
+    emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
+      .then(()=>{
+        console.log('EmailJS confirmation sent OK');
+      })
+      .catch(err => {
+        console.error('EmailJS send failed:', err);
+      });
+
+    feedbackReceipt.classList.add('show');
+    feedbackSubmitBtn.textContent = "Sent ✅";
+    feedbackSubmitBtn.disabled = true;
+  });
+</script>
+
+</body>
+</html>
